@@ -9,33 +9,51 @@ import { TaskType } from "../types";
 import { ApiResponse } from "../utils/ApiResponse";
 import { asyncHandler } from "../utils/asyncHandler";
 import { ApiError } from "../utils/ApiError";
+import { getDueDate } from "../utils/dueDate";
+
+import { ParsedQs } from "qs";
 
 // Controller to create task
 const createTask = asyncHandler(
   async (req: Request<{}, {}, TaskType>, res: Response) => {
-    const { title, description, maintainceDate, days, dueDate } = req.body;
+    const { title, description, maintainceDate, days } = req.body;
 
+    // Validate request body
     if (
       !title ||
       typeof title !== "string" ||
-      typeof maintainceDate !== "object" ||
       !maintainceDate ||
       !days ||
       typeof days !== "number"
     ) {
       throw new ApiError(400, "Please fill up the required details");
-    };
-    
-    const task = await taskService.saveTask(req.body);
+    }
 
-    // verfify task have or not ?
+    // 60 days in milliseconds
+    const dueDate = getDueDate(maintainceDate, days).toString();
+
+    const taskData: TaskType = {
+      ...req.body,
+      dueDate,
+    };
+
+    // Save task
+    const task = await taskService.saveTask(taskData);
+
+    // Verify if task was created
     if (!task) {
-      throw new ApiError(500, "Something went wrong");
+      throw new ApiError(404, "Not Found");
+    }
+
+    const history = await historyService.saveHistory(task);
+
+    if (!history) {
+      throw new ApiError(404, "Not Found");
     }
 
     return res
       .status(201)
-      .json(new ApiResponse(200, task, "Task created Successfully"));
+      .json(new ApiResponse(201, { task }, "Task created Successfully"));
   }
 );
 
@@ -55,7 +73,7 @@ const getTaskById = asyncHandler(async (req, res) => {
 
   if (!id) {
     throw new ApiError(404, "Not found ID");
-  };
+  }
 
   const task = await taskService.getTaskById(id.toString());
 
@@ -65,14 +83,36 @@ const getTaskById = asyncHandler(async (req, res) => {
 });
 
 // Controller to update task by id
-const updateTaskById = asyncHandler(async (req, res) => {
-  // throw new ApiError(500, "Something went wrong while registering the user");
-  const task = await taskService.updateTaskById(req.params.id, req.body);
+const updateTaskById = asyncHandler(
+  async (req: Request<any, any, TaskType>, res: Response) => {
+    // throw new ApiError(500, "Something went wrong while registering the user");
+    const { maintainceDate, days } = req.body;
+    const dueDate = getDueDate(maintainceDate, days).toString();
 
-  return res
-    .status(201)
-    .json(new ApiResponse(200, task, "Task updated by id Successfully"));
-});
+    const taskData: TaskType = {
+      ...req.body,
+      dueDate,
+    };
+
+    // Update task data
+    const task = await taskService.updateTaskById(req.params.id, taskData);
+
+    // Verify if task was updated
+    if (!task) {
+      throw new ApiError(404, "Task not found");
+    }
+
+    const history = await historyService.saveHistory(task);
+
+    if (!history) {
+      throw new ApiError(404, "Not Found");
+    };
+
+    return res
+      .status(201)
+      .json(new ApiResponse(200, task, "Task updated by id Successfully"));
+  }
+);
 
 // Controller to delete all tasks
 const deleteAllTasks = asyncHandler(async (req, res) => {
@@ -91,7 +131,7 @@ const deleteTaskById = asyncHandler(async (req, res) => {
 
   if (!id) {
     throw new ApiError(400, "Please fill up the required details");
-  };
+  }
 
   const task = await taskService.deleteTaskById(id.toString());
 

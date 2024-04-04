@@ -1,7 +1,15 @@
 import mongoose from "mongoose";
-import { History } from "./history.modal";
 
-const taskSchema = new mongoose.Schema(
+// Define TaskSchema
+interface TaskSchemaType extends mongoose.Document {
+  title: string;
+  description: string;
+  maintainceDate: Date;
+  dueDate: Date;
+  days: number;
+}
+
+const taskSchema = new mongoose.Schema<TaskSchemaType>(
   {
     title: {
       type: String,
@@ -16,7 +24,6 @@ const taskSchema = new mongoose.Schema(
     maintainceDate: {
       type: Date,
       required: true,
-      default: null,
     },
     dueDate: {
       type: Date,
@@ -26,17 +33,9 @@ const taskSchema = new mongoose.Schema(
       type: Number,
       required: true,
       default: null,
-    },
+    }
   },
   { timestamps: true }
 );
 
-taskSchema.post("save", async function (doc) {
-  const taskId = doc._id;
-  const status = doc.isNew ? "created" : "updated";
-
-  // Create history record for the task
-  await History.create({ taskId, status });
-});
-
-export const Task = mongoose.model("Task", taskSchema);
+export const Task = mongoose.model<TaskSchemaType>("Task", taskSchema);

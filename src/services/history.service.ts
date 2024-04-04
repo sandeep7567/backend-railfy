@@ -1,6 +1,11 @@
 import { History } from "../modals/history.modal";
 
+
 export const historyService = {
+  saveHistory: async (data: any): Promise<any> => {
+    const history = new History({ taskHistory: data, taskId: data._id });
+    return await history.save();
+  },
   getAllHistory: async (): Promise<any> => {
     return await History.find({
       $or: [
