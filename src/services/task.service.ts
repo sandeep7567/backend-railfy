@@ -1,5 +1,6 @@
-import { Task } from "../modals/task.modal";
+import { PipelineStage } from "mongoose";
 import { TaskType } from "../types";
+import { Task } from "../modals/task.modal";
 
 export const taskService = {
   saveTask: async (data: TaskType): Promise<any> => {
@@ -9,10 +10,24 @@ export const taskService = {
   },
 
   // Service to get all tasks and also add here page, skip, limit, sort and other filter options
-  getAllTasks: async (): Promise<any[]> => {
-    const tasks = await Task.find();
+  getAllTasks: async (sort: 1 | -1 = -1, pageIndex: number = 0, pageSize: number = 6 ): Promise<any[]> => {
+    const pipeline:PipelineStage[] = [];
+    
+    // // 05) Limit stage;
+    const limit = pageSize ? pageSize : 6;
 
-    return tasks;
+    // // 06) skip;
+    const skip = pageIndex && pageSize ? pageIndex * pageSize : 0;
+
+    // 07) Add pagination
+    pipeline.push({
+      $facet: {
+        data: [ { $match: {  } }, { $sort: { dueDate: sort } }, { $skip: skip }, { $limit: limit }],
+        totalDocuments: [{ $count: "total" }],
+      },
+    });
+
+    return await Task.aggregate(pipeline);
   },
 
   // Service to get a task by ID

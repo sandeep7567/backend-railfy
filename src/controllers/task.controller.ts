@@ -1,17 +1,16 @@
 import { Request, Response } from "express";
-import { Task } from "../modals/task.modal";
 
 import { historyService } from "../services/history.service";
 import { taskService } from "../services/task.service";
 
 import { TaskType } from "../types";
 
+import { ApiError } from "../utils/ApiError";
 import { ApiResponse } from "../utils/ApiResponse";
 import { asyncHandler } from "../utils/asyncHandler";
-import { ApiError } from "../utils/ApiError";
 import { getDueDate } from "../utils/dueDate";
 
-import { ParsedQs } from "qs";
+import { ParamsDictionary } from "express-serve-static-core";
 
 // Controller to create task
 const createTask = asyncHandler(
@@ -58,14 +57,46 @@ const createTask = asyncHandler(
 );
 
 // Controller to get All tasks
-const getAllTasks = asyncHandler(async (req, res) => {
-  // throw new ApiError(500, "Something went wrong while registering the user");
-  const tasks: any[] = await taskService.getAllTasks();
+const getAllTasks = asyncHandler(
+  async (
+    req: Request<ParamsDictionary, any, any, any, Record<string, any>>,
+    res: Response<any, Record<string, any>>
+  ) => {
+    const pageIndex: number = req.query.pageIndex
+      ? parseInt(req.query.pageIndex)
+      : 0;
+    const pageSize: number = req.query.pageSize
+      ? parseInt(req.query.pageSize)
+      : 6;
 
-  return res
-    .status(201)
-    .json(new ApiResponse(200, tasks, "Tasks fetched Successfully"));
-});
+    const order: string = req.query.field === "dueDate" ? req.query.order : "";
+
+    const sort: 1 | -1 = order === "asc" ? 1 : -1;
+
+    const tasks: any = await taskService.getAllTasks(sort, pageIndex, pageSize);
+
+    const [{ data, totalDocuments }] = tasks;
+
+    const paginatedData = data;
+    const totalDoc = totalDocuments[0]?.total || 0;
+
+    // Calculate total number of pages
+    const totalPages = Math.ceil(totalDoc / pageSize);
+
+    return res.status(200).json(
+      new ApiResponse(
+        200,
+        {
+          taskInfo: paginatedData,
+          totalDoc,
+          totalPages,
+          currentPage: pageIndex + 1,
+        },
+        "Tasks fetched Successfully"
+      )
+    );
+  }
+);
 
 // Controller to get task by id
 const getTaskById = asyncHandler(async (req, res) => {
@@ -95,39 +126,73 @@ const updateTaskById = asyncHandler(
     };
 
     // Update task data
-    const task = await taskService.updateTaskById(req.params.id, taskData);
+    const updatedTask = await taskService.updateTaskById(
+      req.params.id,
+      taskData
+    );
 
     // Verify if task was updated
-    if (!task) {
+    if (!updatedTask) {
       throw new ApiError(404, "Task not found");
     }
 
-    const history = await historyService.saveHistory(task);
+    const existingHistory = await historyService.getHistoryByTaskId(
+      updatedTask._id
+    );
+
+    if (!existingHistory) {
+      throw new ApiError(404, "Create task history first");
+    }
+
+    const { status, version } = existingHistory;
+    const { _id, createdAt, updatedAt, ...taskHistory } = updatedTask._doc;
+
+    const updatedVersion = version ? version + 1 : 1;
+    const updatedStatus = "updated";
+    const historyTrack = {
+      status: updatedStatus,
+      version: updatedVersion,
+      taskId: _id,
+      taskHistory,
+    };
+
+    const history = await historyService.updateHistory(historyTrack);
 
     if (!history) {
       throw new ApiError(404, "Not Found");
-    };
+    }
 
     return res
       .status(201)
-      .json(new ApiResponse(200, task, "Task updated by id Successfully"));
+      .json(
+        new ApiResponse(200, updatedTask, "Task updated by id Successfully")
+      );
   }
 );
 
 // Controller to delete all tasks
 const deleteAllTasks = asyncHandler(async (req, res) => {
   // throw new ApiError(500, "Something went wrong while registering the user");
-  await taskService.deleteAllTasks();
+  const [deleteTask, deleteHistory] = await Promise.all([
+    await taskService.deleteAllTasks(),
+    await historyService.deleteAllHistory(),
+  ]);
 
   return res
-    .status(201)
-    .json(new ApiResponse(200, { ok: "ok" }, "Delete All Tasks Successfully"));
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        { deleteHistory, deleteTask },
+        "Delete All Tasks Successfully"
+      )
+    );
 });
 
 // Controller to delete task by id
 const deleteTaskById = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  const deleteHistory = req.query.deleteHistory === "true";
+  const deleteHistory = req.query.deleteHistory === "false";
 
   if (!id) {
     throw new ApiError(400, "Please fill up the required details");
@@ -140,7 +205,7 @@ const deleteTaskById = asyncHandler(async (req, res) => {
     throw new ApiError(404, "Task not found");
   }
 
-  const historyDelete = await historyService.deleteHistoryByTaskId(
+  const historyDelete = await historyService.deleteAllHistoryByTaskId(
     id.toString(),
     deleteHistory
   );
@@ -155,10 +220,9 @@ const deleteTaskById = asyncHandler(async (req, res) => {
 });
 
 export {
-  createTask,
-  getAllTasks,
+  createTask, deleteAllTasks,
+  deleteTaskById, getAllTasks,
   getTaskById,
-  updateTaskById,
-  deleteAllTasks,
-  deleteTaskById,
+  updateTaskById
 };
+
