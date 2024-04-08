@@ -77,7 +77,18 @@ const getAllTasks = asyncHandler(
 
     const [{ data, totalDocuments }] = tasks;
 
-    const paginatedData = data;
+    const paginatedTasks = data.map((task: any) => ({
+      _id: task._id,
+      title: task.title,
+      description: task.description,
+      days: task.days,
+      dueDate: task.dueDate,
+      maintainceDate: task.maintainceDate,
+      createdAt: task.createdAt,
+      updatedAt: task.updatedAt,
+    }));
+
+    // const paginatedData = data;
     const totalDoc = totalDocuments[0]?.total || 0;
 
     // Calculate total number of pages
@@ -87,10 +98,8 @@ const getAllTasks = asyncHandler(
       new ApiResponse(
         200,
         {
-          taskInfo: paginatedData,
-          totalDoc,
-          totalPages,
-          currentPage: pageIndex + 1,
+          taskInfo: paginatedTasks,
+          pageInfo: { totalDoc, totalPages, currentPage: pageIndex + 1 },
         },
         "Tasks fetched Successfully"
       )
@@ -220,9 +229,10 @@ const deleteTaskById = asyncHandler(async (req, res) => {
 });
 
 export {
-  createTask, deleteAllTasks,
-  deleteTaskById, getAllTasks,
+  createTask,
+  deleteAllTasks,
+  deleteTaskById,
+  getAllTasks,
   getTaskById,
-  updateTaskById
+  updateTaskById,
 };
-

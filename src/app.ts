@@ -24,7 +24,6 @@ import taskRouter from './routes/task.routes'
 
 //routes declaration
 app.use("/api/v1/task", taskRouter)
-// app.use("/api/v1/healthcheck", healthcheckRouter)
 
 // http://localhost:8000/api/v1/users/register
 
