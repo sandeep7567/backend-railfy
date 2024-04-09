@@ -150,24 +150,24 @@ const updateTaskById = asyncHandler(
     );
 
     if (!existingHistory) {
-      throw new ApiError(404, "Create task history first");
+      const newHistory = await historyService.saveHistory(updatedTask);
+
+      const createHistory = await historyService.updateHistory(newHistory);
+
+      if (!createHistory) {
+        throw new ApiError(404, "Not Found");
+      }
+
+      return res
+        .status(201)
+        .json(
+          new ApiResponse(200, updatedTask, "Task updated by id Successfully")
+        );
     }
 
-    const { status, version } = existingHistory;
-    const { _id, createdAt, updatedAt, ...taskHistory } = updatedTask._doc;
+    const updateHistory = await historyService.updateHistory(updatedTask);
 
-    const updatedVersion = version ? version + 1 : 1;
-    const updatedStatus = "updated";
-    const historyTrack = {
-      status: updatedStatus,
-      version: updatedVersion,
-      taskId: _id,
-      taskHistory,
-    };
-
-    const history = await historyService.updateHistory(historyTrack);
-
-    if (!history) {
+    if (!updateHistory) {
       throw new ApiError(404, "Not Found");
     }
 

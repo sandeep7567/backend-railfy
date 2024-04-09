@@ -10,12 +10,13 @@ import {
 
 const router = Router();
 
+// route for tasks
 router.route("/").post(createTask).delete(deleteAllTasks).get(getAllTasks);
 
 router
-  .route("/:id")
-  .patch(updateTaskById)
-  .delete(deleteTaskById)
-  .get(getTaskById);
+.route("/:id")
+.patch(updateTaskById)
+.delete(deleteTaskById)
+.get(getTaskById)
 
 export default router;

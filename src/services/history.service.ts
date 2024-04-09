@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import { History } from "../modals/history.modal";
 
 export const historyService = {
@@ -11,11 +12,12 @@ export const historyService = {
     return await history.save();
   },
   updateHistory: async (data: any): Promise<any> => {
+    const { taskId, version, status, taskHistory, ...restData } = data._doc;
     const history = new History({
-      taskId: data.taskId,
-      status: data.status,
-      version: data.version,
-      taskHistory: data.taskHistory,
+      taskId,
+      status: "updated",
+      version: version ? data.version + 1 : 1,
+      taskHistory,
     });
 
     return await history.save();
@@ -29,8 +31,53 @@ export const historyService = {
   getHistoryById: async (id: string): Promise<any> =>
     await History.findById(id),
 
-  getAllHistoryByTaskId: async (taskId: string): Promise<any> =>
-    await History.find({ taskId }),
+  // Service to get all tasks and also add here page, skip, limit, sort and other filter options
+  getAllHistoryByTaskId: async (
+    sort: 1 | -1 = -1,
+    pageIndex: number = 0,
+    pageSize: number = 6,
+    field: string = "taskId",
+    taskId: string
+  ): Promise<any[]> => {
+    const pipeline: any[] = [];
+
+    // Limit stage
+    const limit = pageSize;
+
+    // Skip stage
+    const skip = pageIndex * pageSize;
+
+    // Check if taskId is a valid ObjectId
+    const mongoDBObjectId = mongoose.isValidObjectId(taskId);
+    if (!mongoDBObjectId) {
+      throw new Error("Invalid taskId");
+    }
+
+    if (mongoDBObjectId) {
+      pipeline.push({
+        $match: { taskId: new mongoose.Types.ObjectId(taskId) },
+      });
+    } else {
+      throw new Error("Invalid taskId");
+    }
+    // We can also sort by version of histroy ?
+    // Add pagination
+    pipeline.push({
+      $facet: {
+        data: [
+          { $sort: { [field]: sort } },
+          { $skip: skip },
+          { $limit: limit },
+        ],
+        totalDocuments: [
+          { $match: { taskId: new mongoose.Types.ObjectId(taskId) } },
+          { $count: "total" },
+        ],
+      },
+    });
+
+    return await History.aggregate(pipeline);
+  },
 
   getHistoryByTaskId: async (taskId: string): Promise<any> =>
     // await History.findOne({ taskId }),
@@ -50,7 +97,7 @@ export const historyService = {
   deleteAllHistory: async (): Promise<any> => await History.deleteMany(),
 
   deleteHistoryById: async (id: string): Promise<any> =>
-    await History.findByIdAndDelete(id),
+    await History.findByIdAndDelete(id, { new: true }),
 
   deleteAllHistoryByTaskId: async (
     id: string,
