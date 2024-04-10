@@ -6,7 +6,7 @@ enum TaskStatus {
   DELETED = "deleted",
 }
 
-interface TaskHistory {
+export interface TaskHistory {
   title: string;
   description: string;
   maintainceDate: Date;
@@ -15,7 +15,7 @@ interface TaskHistory {
 }
 
 // Define TaskVersionSchema
-interface HistorySchemaType extends mongoose.Document {
+export interface HistorySchemaType extends mongoose.Document {
   taskId: mongoose.Types.ObjectId;
   version: number;
   taskHistory: TaskHistory;

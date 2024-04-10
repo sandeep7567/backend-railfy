@@ -38,9 +38,12 @@ export const getAllHistoryByTaskId = async (req: Request, res: Response) => {
     },
   ] = historyByTaskId;
 
+  const totalDoc = !!totalDocuments.length ? totalDocuments[0].total : totalDocuments.length;
+
+
   const pagination = {
-    totalDoc: !!totalDocuments.length ? totalDocuments[0].total : totalDocuments.length,
-    totalPages: Math.ceil(0 / Number(pageSize)),
+    totalDoc,
+    totalPages: Math.ceil(totalDoc / Number(pageSize)),
     currentPage: Number(pageIndex) + 1,
   };
 

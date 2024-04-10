@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 
 // Define TaskSchema
-interface TaskSchemaType extends mongoose.Document {
+export interface TaskSchemaType extends mongoose.Document {
   title: string;
   description: string;
   maintainceDate: Date;
