@@ -1,4 +1,4 @@
-import express from "express"
+import express, { Request, Response } from "express"
 import cors from "cors"
 import cookieParser from "cookie-parser";
 import dotenv from "dotenv";
@@ -20,10 +20,12 @@ app.use(express.static("public"))
 app.use(cookieParser())
 
 //routes import
+import healthRouter from './routes/health.routes';
 import taskRouter from './routes/task.routes';
 import historyRouter from './routes/history.routes';
 
 //routes declaration
+app.use("/api/v1/health", healthRouter);
 app.use("/api/v1/task", taskRouter);
 app.use("/api/v1/history", historyRouter);
 
