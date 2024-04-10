@@ -12,11 +12,12 @@ export const historyService = {
     return await history.save();
   },
   updateHistory: async (data: any): Promise<any> => {
-    const { taskId, version, status, taskHistory, ...restData } = data._doc;
+    const { taskId, version, taskHistory, ...restData } = data;
+    
     const history = new History({
       taskId,
       status: "updated",
-      version: version ? data.version + 1 : 1,
+      version: version ? version + 1 : 1,
       taskHistory,
     });
 
