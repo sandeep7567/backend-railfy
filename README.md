@@ -11,6 +11,6 @@ Taskify app backend which handle crud for your task, also make a record (history
 
 # How to run locally;
 
-1) git clone --Link--
+1) git clone https://github.com/sandeep7567/backend-taskify.git
 2) npm install & Set Env File
 3) npm run dev
