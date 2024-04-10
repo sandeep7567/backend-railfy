@@ -1,28 +1,16 @@
-Railfy Backend API
-This repository contains the backend codebase for Railfy, a task management application. Railfy's backend is built using TypeScript, Express.js, and Node.js.
+Taskify Backend API
+This repository contains the backend codebase for Taskify, a task management application. Taskify backend is built using TypeScript, Express.js, and Node.js.
 
-Controllers
-Railfy's backend provides the following endpoints for managing tasks:
+A TODO TASKIFY APP
 
-Create Task: POST /api/tasks
+Taskify app backend which handle crud for your task, also make a record (history with status and maintance ), follow task & history modals.
 
-Creates a new task.
-Request Body: { "title": "Task Title", "description": "Task Description", "maintainceDate": "YYYY-MM-DD", "dueDate": "YYYY-MM-DD", "days": 7 }
-Response: { "message": "Task created successfully", "task": { /* Task Object */ } }
-Update Task: PATCH /api/tasks/:id
+1) Task Controllers to POST, GET, PATCH, DELETE Task;
 
-Updates an existing task by its ID.
-Request Body: { "title": "Updated Task Title", "description": "Updated Task Description", "maintainceDate": "YYYY-MM-DD", "dueDate": "YYYY-MM-DD", "days": 7 }
-Response: { "message": "Task updated successfully", "task": { /* Updated Task Object */ } }
-Delete Task: DELETE /api/tasks/:id
+2) Histroey Controllers to make a copy of task if its created or updated, for that we have saveHistory, updateHistory, deleteHistory, deleteHistoryByTaskId etc History Controllers.
 
-Deletes a task by its ID.
-Response: { "message": "Task deleted successfully" }
-Get All Tasks: GET /api/tasks
+# How to run locally;
 
-Retrieves all tasks.
-Response: { "tasks": [ /* Array of Task Objects */ ] }
-Get Task by ID: GET /api/tasks/:id
-
-Retrieves a task by its ID.
-Response: { "task": { /* Task Object */ } }
+1) git clone --Link--
+2) npm install & Set Env File
+3) npm run dev
